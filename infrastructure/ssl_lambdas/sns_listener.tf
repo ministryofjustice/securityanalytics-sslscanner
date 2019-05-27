@@ -3,9 +3,7 @@ resource "aws_lambda_permission" "with_sns" {
   action        = "lambda:InvokeFunction"
   function_name = "${aws_lambda_function.sns_listener.function_name}"
   principal     = "sns.amazonaws.com"
-
-  #TODO: check arn is valid
-  source_arn = "${data.aws_ssm_parameter.sns_nmap_topic_arn.value}"
+  source_arn    = "${data.aws_ssm_parameter.sns_nmap_topic_arn.value}"
 }
 
 resource "aws_sns_topic_subscription" "lambda" {
@@ -33,12 +31,9 @@ resource "aws_iam_role_policy_attachment" "sns_sqs_policy" {
 }
 
 resource "aws_lambda_function" "sns_listener" {
-  depends_on = ["data.external.ssl_zip"]
-
-  function_name = "${terraform.workspace}-${var.app_name}-${var.task_name}-sns-listener"
-  handler       = "sns_listener.sns_listener.check_event"
-
-  #TODO: what is results_parser_role?
+  depends_on       = ["data.external.ssl_zip"]
+  function_name    = "${terraform.workspace}-${var.app_name}-${var.task_name}-sns-listener"
+  handler          = "sns_listener.sns_listener.check_event"
   role             = "${var.task_queue_consumer_arn}"
   runtime          = "python3.7"
   filename         = "${local.ssl_zip}"
