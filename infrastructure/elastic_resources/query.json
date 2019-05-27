@@ -1,0 +1,46 @@
+{
+//   "size":0,
+//   "_source": ["scan_id", "address", "end_time", "host_names.host_name",  "ports.cve_vulners.cves.cve_severity"],
+//   "query": {
+//     "nested": {
+//       "path": "ports",
+//       "query": {
+//         "nested": {
+//           "path": "ports.cve_vulners",
+//           "query": {
+//             "nested": {
+//               "path": "ports.cve_vulners.cves",
+//               "query": {
+//                 "range": {
+//                   "ports.cve_vulners.cves.cve_severity": {
+//                     "gte": "7.1"
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       }
+//     }
+//   },
+//   "collapse" : {
+//       "field" : "scan_id"
+//   },
+//   "sort": ["end_time"],
+//   "aggs": {
+//     "dedup_address": {
+//       "terms": {
+//         "field": "address"
+//       },
+//       "aggs": {
+//         "dedup_docs": {
+//           "top_hits": {
+//             "size":1,
+//             "sort": ["end_time"],
+//             "_source": ["scan_id", "address", "end_time", "host_names.host_name",  "ports.cve_vulners.cves.cve_severity"]
+//           }
+//         }
+//       }
+//     }
+//   }
+}

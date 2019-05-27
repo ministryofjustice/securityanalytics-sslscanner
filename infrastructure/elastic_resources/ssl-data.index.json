@@ -1,0 +1,124 @@
+{
+  // "mappings": {
+  //   "_doc": {
+  //     "properties": {
+  //       "scan_start_time": {
+  //         "type": "date"
+  //       },
+  //       "scan_end_time": {
+  //         "type": "date"
+  //       },
+  //       "host_scan_start_time": {
+  //         "type": "date"
+  //       },
+  //       "host_scan_end_time": {
+  //         "type": "date"
+  //       },
+  //       "address": {
+  //         "type": "keyword"
+  //       },
+  //       "address_type": {
+  //         "type": "keyword"
+  //       },
+  //       "scan_id": {
+  //         "type": "keyword"
+  //       },
+  //       "status": {
+  //         "type": "keyword"
+  //       },
+  //       "uptime": {
+  //         "type": "integer"
+  //       },
+  //       "summary_lowest_ssl_strength": {
+  //         "type": "keyword"
+  //       },
+  //       "summary_lowest_ssl_proto": {
+  //         "type": "keyword"
+  //       },
+  //       "summary_highest_cve_severity": {
+  //         "type": "float"
+  //       },
+  //       "host_names": {
+  //         "type": "nested",
+  //         "properties": {
+  //           "host_name": {
+  //             "type": "keyword"
+  //           },
+  //           "host_name_type": {
+  //             "type": "keyword"
+  //           }
+  //         }
+  //       },
+  //       "ports": {
+  //         "type": "nested",
+  //         "properties": {
+  //           "port_id": {
+  //             "type": "keyword"
+  //           },
+  //           "protocol": {
+  //             "type": "keyword"
+  //           },
+  //           "service": {
+  //             "type": "keyword"
+  //           },
+  //           "product": {
+  //             "type": "keyword"
+  //           },
+  //           "ssl_enum_ciphers": {
+  //             "type": "nested",
+  //             "properties": {
+  //               "protocol": {
+  //                 "type": "keyword"
+  //               },
+  //               "ssl_least_strength": {
+  //                 "type": "keyword"
+  //               },
+  //               "ciphers": {
+  //                 "type": "nested",
+  //                 "properties": {
+  //                   "name": {
+  //                     "type": "keyword"
+  //                   },
+  //                   "strength": {
+  //                     "type": "keyword"
+  //                   },
+  //                   "kex_info": {
+  //                     "type": "keyword"
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           },
+  //           "cve_vulners": {
+  //             "type": "nested",
+  //             "properties": {
+  //               "cves": {
+  //                 "type": "nested",
+  //                 "properties": {
+  //                   "cve_code": {
+  //                     "type": "keyword"
+  //                   },
+  //                   "cve_severity": {
+  //                     "type": "float"
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //       },
+  //       "os_info": {
+  //         "type": "nested",
+  //         "properties": {
+  //           "os_name": {
+  //             "type": "keyword"
+  //           },
+  //           "os_accuracy": {
+  //             "type": "integer"
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+}
