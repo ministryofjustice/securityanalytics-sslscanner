@@ -1,0 +1,6 @@
+{
+  "attributes": {
+    "title": "${object_title}",
+    "timeFieldName": "scan_end_time"
+  }
+}

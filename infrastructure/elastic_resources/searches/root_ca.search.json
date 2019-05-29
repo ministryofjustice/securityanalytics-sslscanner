@@ -1,0 +1,18 @@
+{
+    "attributes": {
+        "title": "${object_title}",
+        "description": "A search returning the root CAs for sites with SSL",
+        "hits": 0,
+        "columns": [
+            "summary_O"
+        ],
+        "sort": [
+            "scan_end_time",
+            "desc"
+        ],
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"index\":\"${index}\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"*\"},\"filter\":[{\"$state\":{\"store\":\"appState\"},\"meta\":{\"alias\":null,\"disabled\":false,\"index\":\"${index}\",\"key\":\"root_ca\",\"negate\":false,\"params\":{\"query\":\"True\",\"type\":\"phrase\"},\"type\":\"phrase\",\"value\":\"True\"},\"query\":{\"match\":{\"root_ca\":{\"query\":\"True\",\"type\":\"phrase\"}}}}]}"
+        }
+    }
+}

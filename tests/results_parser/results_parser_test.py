@@ -55,7 +55,7 @@ def test_parses_hosts_and_ports():
     results_parser.ssm_client.get_parameters.return_value = ssm_return_vals()
 
     # load sample results file and make mock return it
-    sample_file_name = f"{TEST_DIR}f7ade9d0-0eda-4bd1-bc23-9f48f675c80d-2019-05-22T152935-ssl.txt.tar.gz"
+    sample_file_name = f"{TEST_DIR}053dacb6-91bf-4aaa-8790-8224d65d5d88-2019-05-28T101309-ssl.txt.tar.gz"
     with open(sample_file_name, "rb") as sample_data:
         results_parser.s3_client.get_object.return_value = {
             "Body": StreamingBody(sample_data, os.stat(sample_file_name).st_size)
@@ -67,26 +67,31 @@ def test_parses_hosts_and_ports():
                     "bucket": {"name": "test_bucket"},
                     # Please note that the / characters in the key are replaced with %2F, the key is
                     # urlencoded
-                    "object": {"key": "f7ade9d0-0eda-4bd1-bc23-9f48f675c80d-2019-05-22T152935-ssl.txt.tar.gz"}
+                    "object": {"key": "053dacb6-91bf-4aaa-8790-8224d65d5d88-2019-05-28T101309-ssl.txt.tar.gz"}
                 }}
             ]
         }, mock.MagicMock())
-        results_parser.sns_client.publish.assert_called_once_with(
-            **expected_pub("me-twice:data:write", {
-                2: {
-                    'depth': 2,
-                    'C': 'US',
-                    'O': 'DigiCert Inc',
-                    'OU': 'www.digicert.com',
-                    'CN': 'DigiCert Global Root CA'},
-                1: {
-                    'depth': 1,
-                    'C': 'US',
-                    'O': 'DigiCert Inc',
-                    'OU': 'www.digicert.com',
-                    'CN': 'RapidSSL RSA CA 2018'},
-                0: {
-                    'depth': 0,
-                    'CN': '*.wpengine.com'}
-            })
-        )
+        results_parser.sns_client.publish.call_count == 3
+
+
+def test_parses_quotes_in_ca():
+    results_parser.ssm_client.get_parameters.return_value = ssm_return_vals()
+
+    # load sample results file and make mock return it
+    sample_file_name = f"{TEST_DIR}f530f0c4-64ff-41d4-8bcd-012d2f16d161-2019-05-29T130337-ssl.txt.tar.gz"
+    with open(sample_file_name, "rb") as sample_data:
+        results_parser.s3_client.get_object.return_value = {
+            "Body": StreamingBody(sample_data, os.stat(sample_file_name).st_size)
+        }
+
+        results_parser.parse_results({
+            "Records": [
+                {"s3": {
+                    "bucket": {"name": "test_bucket"},
+                    # Please note that the / characters in the key are replaced with %2F, the key is
+                    # urlencoded
+                    "object": {"key": "f530f0c4-64ff-41d4-8bcd-012d2f16d161-2019-05-29T130337-ssl.txt.tar.gz"}
+                }}
+            ]
+        }, mock.MagicMock())
+        results_parser.sns_client.publish.call_count == 4

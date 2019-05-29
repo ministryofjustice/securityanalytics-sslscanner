@@ -1,0 +1,26 @@
+{
+  "mappings": {
+    "_doc": {
+      "properties": {
+        "scan_start_time": {
+          "type": "date"
+        },
+        "scan_end_time": {
+          "type": "date"
+        },
+        "address": {
+          "type": "keyword"
+        },
+        "address_type": {
+          "type": "keyword"
+        },
+        "root_ca": {
+          "type": "keyword"
+        },
+        "summary_O": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}

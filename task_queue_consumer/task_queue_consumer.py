@@ -55,16 +55,16 @@ def is_valid_hostname(hostnameport):
         return all(ALLOWED_NAME.match(label) for label in labels)
 
 
-def openssl(event, host, message_id):
+def openssl(event, scan, message_id):
     print('running openssl')
-    cmd = "openssl s_client -showcerts -connect "+host
-    date_string = f'{datetime.now():%Y-%m-%dT%H%M%S%Z}'
+    cmd = f"openssl s_client -showcerts -connect {scan['target']}"
+    date_string = f"{datetime.now():%Y-%m-%dT%H%M%S%Z}"
     out = subprocess.check_output(f"echo | {cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
     # openssl outputs on two tty streams, so merge the two together and put in S3 for processing later
     output = ""
     s3file = f"{message_id}-{date_string}-ssl.txt"
     mergedf = open(f"/tmp/{s3file}", "w")
-    mergedf.write(f"host={host}\n")
+    mergedf.write(f"scan={dumps(scan)}\n")
     with open("/tmp/tty2.txt", "r") as f:
         mergedf.write(f.read())
     with open("/tmp/tty1.txt", "r") as f:
@@ -77,13 +77,13 @@ def openssl(event, host, message_id):
         f"/tmp/{s3file}.tar.gz", event["ssm_params"][RESULTS],  f"{s3file}.tar.gz", ExtraArgs={'ServerSideEncryption': "AES256"})
 
 
-def run_task(event, host, message_id):
-    if not is_valid_hostname(host):
+def run_task(event, scan, message_id):
+    if not is_valid_hostname(scan["target"]):
         raise ValueError(
-            f"Invalid hostname and/or port for openssl task {host}")
+            f"Invalid hostname and/or port for openssl task {scan['target']}")
         return
-    print(f"open ssl scan: {host}")
-    openssl(event, host, message_id)
+    print(f"open ssl scan: {scan['target']}")
+    openssl(event, scan, message_id)
 
 
 @ssm_parameters(
@@ -95,4 +95,6 @@ async def submit_scan_task(event, _):
 
     print(f"Processing event {dumps(event)}")
     for record in event["Records"]:
-        run_task(event, record["body"], record["messageId"])
+        print(f"OpenSSL Scan requested: {dumps(record['body'])}")
+        scan = loads(record["body"])
+        run_task(event, scan, f"{record['messageId']}")

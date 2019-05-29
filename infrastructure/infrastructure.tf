@@ -57,17 +57,22 @@ locals {
   ssm_source_stage = "${var.ssm_source_stage == "DEFAULT" ? terraform.workspace : var.ssm_source_stage}"
 }
 
+module "elastic_resources" {
+  source           = "elastic_resources"
+  aws_region       = "${var.aws_region}"
+  app_name         = "${var.app_name}"
+  task_name        = "${var.task_name}"
+  ssm_source_stage = "${local.ssm_source_stage}"
+}
+
 module "ssl_task" {
   // two slashes are intentional: https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories  
 
-  source = "github.com/ministryofjustice/securityanalytics-taskexecution//infrastructure/task"
+  // source = "github.com/ministryofjustice/securityanalytics-taskexecution//infrastructure/task"
 
-  // It is sometimes useful for the developers of the project to use a local version of the task
-  // execution project. This enables them to develop the task execution project and the ssl scanner
-  // (or other future tasks), at the same time, without requiring the task execution changes to be
-  // pushed to master. Unfortunately you can not interpolate variables to generate source locations, so
-  // devs will have to comment in/out this line as and when they need
-  # source = "../../securityanalytics-taskexecution/infrastructure/task"
+  // It is sometimes useful for the developers of the project to use a local version of the task  // execution project. This enables them to develop the task execution project and the ssl scanner  // (or other future tasks), at the same time, without requiring the task execution changes to be  // pushed to master. Unfortunately you can not interpolate variables to generate source locations, so  // devs will have to comment in/out this line as and when they need
+
+  source = "../../securityanalytics-taskexecution/infrastructure/task"
 
   app_name                      = "${var.app_name}"
   aws_region                    = "${var.aws_region}"
