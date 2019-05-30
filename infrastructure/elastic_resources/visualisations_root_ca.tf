@@ -16,7 +16,7 @@ module "root_ca_distro" {
   object_template  = "${path.module}/visualisations/root_ca/root_ca_distro.vis.json"
 
   object_substitutions {
-    index     = "${module.index_pattern_data_history.object_id}"
+    index     = "${module.index_pattern_data_snapshot.object_id}"
     search_id = "${module.root_ca_search.object_id}"
   }
 

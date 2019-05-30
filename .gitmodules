@@ -1,3 +1,4 @@
 [submodule "shared_code"]
 	path = shared_code
 	url = https://github.com/ministryofjustice/securityanalytics-sharedcode.git
+	branch = feature/SA-55-ssl-cert-lambda-changes

@@ -15,10 +15,6 @@ ssm_prefix = f"/{app_name}/{stage}"
 ssm_client = boto3.client("ssm", region_name=region)
 SQS_PUSH_URL = f"{ssm_prefix}/tasks/{task_name}/task_queue/url"
 
-# "scan_end_time": "2019-05-28T08:31:57Z",
-# "address": "45.33.32.156",
-# "address_type": "ipv4",
-
 
 def run_task(event, sns_rec):
     print(event)

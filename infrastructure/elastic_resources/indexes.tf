@@ -1,13 +1,3 @@
-# TODO I wish we could use these along with modules with a count argument, but terraform doesn't
-# support that yet
-locals {
-  flavours   = ["history", "snapshot"]
-  data_types = ["root_ca"]
-
-  # Commnented out because setproduct function is only in terraform 12
-  # index_patterns = "${setproduct(local.data_types, local.flavours)}"
-}
-
 module "nmap_index_data" {
   // two slashes are intentional: https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories
   source = "github.com/ministryofjustice/securityanalytics-analyticsplatform//infrastructure/elastic_index"
