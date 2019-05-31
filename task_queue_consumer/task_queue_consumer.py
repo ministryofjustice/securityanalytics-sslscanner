@@ -59,22 +59,29 @@ def openssl(event, scan, message_id):
     print('running openssl')
     cmd = f"openssl s_client -showcerts -connect {scan['target']}"
     date_string = f"{datetime.now():%Y-%m-%dT%H%M%S%Z}"
-    out = subprocess.check_output(f"echo | {cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
-    # openssl outputs on two tty streams, so merge the two together and put in S3 for processing later
-    output = ""
     s3file = f"{message_id}-{date_string}-ssl.txt"
     mergedf = open(f"/tmp/{s3file}", "w")
-    mergedf.write(f"scan={dumps(scan)}\n")
-    with open("/tmp/tty2.txt", "r") as f:
-        mergedf.write(f.read())
-    with open("/tmp/tty1.txt", "r") as f:
-        mergedf.write(f.read())
+    try:
+
+        out = subprocess.check_output(f"echo | {cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
+        # openssl outputs on two tty streams, so merge the two together and put in S3 for processing later
+        mergedf.write(f"scan={dumps(scan)}\n")
+        with open("/tmp/tty2.txt", "r") as f:
+            mergedf.write(f.read())
+        with open("/tmp/tty1.txt", "r") as f:
+            mergedf.write(f.read())
+
+    except subprocess.CalledProcessError as e:
+        # TODO: put this in DLQ once implemented
+        mergedf.write(f"error: {e.output}")
     mergedf.close()
     subprocess.check_output(f'cd /tmp;tar -czvf "{s3file}.tar.gz" "{s3file}"', shell=True)
-
     s3 = boto3.resource("s3", region_name=region)
     s3.meta.client.upload_file(
-        f"/tmp/{s3file}.tar.gz", event["ssm_params"][RESULTS],  f"{s3file}.tar.gz", ExtraArgs={'ServerSideEncryption': "AES256"})
+        f"/tmp/{s3file}.tar.gz",
+        event["ssm_params"][RESULTS],
+        f"{s3file}.tar.gz",
+        ExtraArgs={'ServerSideEncryption': "AES256", 'Metadata': scan})
 
 
 def run_task(event, scan, message_id):

@@ -17,7 +17,7 @@
         "root_ca": {
           "type": "keyword"
         },
-        "summary_O": {
+        "O": {
           "type": "keyword"
         }
       }

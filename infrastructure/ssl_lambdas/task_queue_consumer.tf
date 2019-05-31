@@ -28,7 +28,7 @@ resource "aws_lambda_function" "queue_consumer" {
   runtime          = "python3.7"
   filename         = "${local.ssl_zip}"
   source_code_hash = "${data.external.ssl_zip.result.hash}"
-  timeout          = 10
+  timeout          = 30
 
   layers = [
     "${data.aws_ssm_parameter.utils_layer.value}",

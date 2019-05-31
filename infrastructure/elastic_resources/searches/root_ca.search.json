@@ -4,7 +4,7 @@
         "description": "A search returning the root CAs for sites with SSL",
         "hits": 0,
         "columns": [
-            "summary_O"
+            "O"
         ],
         "sort": [
             "scan_end_time",
