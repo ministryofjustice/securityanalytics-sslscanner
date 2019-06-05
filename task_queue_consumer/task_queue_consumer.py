@@ -1,21 +1,22 @@
-from lambda_decorators import async_handler
-import os
-import boto3
-from utils.lambda_decorators import ssm_parameters
-from utils.json_serialisation import dumps
-from netaddr import IPNetwork
-from netaddr.core import AddrFormatError
-import re
-from json import loads
-from datetime import datetime
+
 import subprocess
+from datetime import datetime
+from json import loads
+import re
+from netaddr.core import AddrFormatError
+from netaddr import IPNetwork
+from utils.json_serialisation import dumps
+from utils.lambda_decorators import ssm_parameters, async_handler
+import os
+import aioboto3
+import boto3
 
 region = os.environ["REGION"]
 stage = os.environ["STAGE"]
 app_name = os.environ["APP_NAME"]
 task_name = os.environ["TASK_NAME"]
 ssm_prefix = f"/{app_name}/{stage}"
-ssm_client = boto3.client("ssm", region_name=region)
+ssm_client = aioboto3.client("ssm", region_name=region)
 
 RESULTS = f"{ssm_prefix}/tasks/{task_name}/s3/results/id"
 
@@ -59,7 +60,7 @@ def openssl(event, scan, message_id):
     print('running openssl')
     cmd = f"openssl s_client -showcerts -connect {scan['target']}"
     date_string = f"{datetime.now():%Y-%m-%dT%H%M%S%Z}"
-    s3file = f"{message_id}-{date_string}-ssl.txt"
+    s3file = f"{message_id}-{date_string}-{task_name}.txt"
     mergedf = open(f"/tmp/{s3file}", "w")
     try:
 

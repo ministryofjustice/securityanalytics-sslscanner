@@ -9,3 +9,4 @@ data "aws_ssm_parameter" "api_gateway" {
 data "aws_ssm_parameter" "sns_nmap_topic_arn" {
   name = "/${var.app_name}/${terraform.workspace}/tasks/nmap/results/arn"
 }
+

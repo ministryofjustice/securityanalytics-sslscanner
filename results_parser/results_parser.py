@@ -1,16 +1,14 @@
-from lambda_decorators import async_handler
 import os
+import aioboto3
 import boto3
-from utils.lambda_decorators import ssm_parameters
+from utils.lambda_decorators import ssm_parameters, async_handler
 from utils.json_serialisation import dumps
 from json import loads
 from utils.objectify_dict import objectify
 import tarfile
 import re
 import io
-import untangle
 import datetime
-import pytz
 from urllib.parse import unquote_plus
 import importlib.util
 from utils.scan_results import ResultsContext
@@ -20,7 +18,7 @@ stage = os.environ["STAGE"]
 app_name = os.environ["APP_NAME"]
 task_name = os.environ["TASK_NAME"]
 ssm_prefix = f"/{app_name}/{stage}"
-ssm_client = boto3.client("ssm", region_name=region)
+ssm_client = aioboto3.client("ssm", region_name=region)
 s3_client = boto3.client("s3", region_name=region)
 sns_client = boto3.client("sns", region_name=region)
 

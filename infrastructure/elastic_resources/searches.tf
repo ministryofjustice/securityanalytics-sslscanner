@@ -8,17 +8,18 @@ module "root_ca_search" {
   // pushed to master. Unfortunately you can not interpolate variables to generate source locations, so
   // devs will have to comment in/out this line as and when they need
   //  source = "../../../securityanalytics-analyticsplatform/infrastructure/kibana_saved_object"
-  app_name = "${var.app_name}"
+  app_name = var.app_name
 
-  aws_region       = "${var.aws_region}"
-  ssm_source_stage = "${var.ssm_source_stage}"
-  task_name        = "${var.task_name}"
+  aws_region       = var.aws_region
+  ssm_source_stage = var.ssm_source_stage
+  task_name        = var.task_name
   object_template  = "${path.module}/searches/root_ca.search.json"
 
-  object_substitutions {
-    index = "${module.index_pattern_data_snapshot.object_id}"
+  object_substitutions = {
+    index = module.index_pattern_data_snapshot.object_id
   }
 
   object_type  = "search"
   object_title = "RootCA for SSL hosts"
 }
+

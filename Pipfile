@@ -2,13 +2,8 @@
 pytest = "*"
 
 [packages]
-boto3 = "*"
-lambda-decorators = "*"
-requests = "*"
-requests-aws4auth = "*"
 netaddr="*"
-untangle = "*"
-pytz = "*"
+aioboto3 = "*"
 
 [requires]
 python_version = "3.7"

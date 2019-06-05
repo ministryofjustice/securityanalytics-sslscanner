@@ -1,51 +1,52 @@
 variable "app_name" {
-  type = "string"
+  type = string
 }
 
 variable "task_name" {
-  type = "string"
+  type = string
 }
 
 variable "aws_region" {
-  type = "string"
+  type = string
 }
 
 variable "account_id" {
-  type = "string"
+  type = string
 }
 
 variable "queue_arn" {
-  type = "string"
+  type = string
 }
 
 variable "task_queue_consumer_arn" {
-  type = "string"
+  type = string
 }
 
 variable "task_queue_consumer_role" {
-  type = "string"
+  type = string
 }
 
 variable "results_bucket" {
-  type = "string"
+  type = string
 }
 
 variable "results_bucket_arn" {
-  type = "string"
+  type = string
 }
 
 variable "results_parser_role" {
-  type = "string"
+  type = string
 }
 
 variable "ssm_source_stage" {
-  type = "string"
+  type = string
 }
 
 variable "s3_bucket_policy_arn" {
-  type = "string"
+  type = string
 }
 
 variable "s3_bucket_policy_doc" {
-  type = "string"
+  type = string
 }
+
