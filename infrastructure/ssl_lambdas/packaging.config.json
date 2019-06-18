@@ -1,0 +1,33 @@
+{
+  "base_dirs": [
+    {
+      "dir": "../task_queue_consumer",
+      "base_in_zip": "task_queue_consumer"
+    },
+    {
+      "dir": "../results_parser",
+      "base_in_zip": "results_parser"
+    },
+    {
+      "dir": "../sns_listener",
+      "base_in_zip": "sns_listener"
+    },
+    {
+      "dir": "../.venv/Lib/site-packages",
+      "exclude_dev_deps": true
+    }
+  ],
+  "excludes": [
+    "pytest-asyncio",
+    "test",
+    "wheel",
+    "more_itertools",
+    "docutils",
+    "jmespath",
+    "python-dateutil",
+    "s3transfer",
+    "six",
+    "pip",
+    "setuptools"
+  ]
+}

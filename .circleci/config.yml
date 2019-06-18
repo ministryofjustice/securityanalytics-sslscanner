@@ -1,0 +1,176 @@
+version: 2.1
+
+master-only: &master-only
+  filters:
+    branches:
+      only: master
+
+executors:
+  builder:
+    docker:
+      - image: duckpodger/python3-node-aws-terraform
+
+jobs:
+  setup:
+    executor: builder
+    steps:
+      - restore_cache:
+          keys:
+            - git-v1-{{ .Branch }}-
+            - git-v1-
+
+      - checkout
+
+      - run:
+          name: update git submodule
+          command: |
+            git submodule init
+            git submodule update --remote
+            git submodule sync
+
+      - restore_cache:
+          keys:
+            - other-v1-{{ .Branch }}-
+            - other-v1-
+
+      - run:
+          name: install virtual env
+          command: |
+            export PIPENV_VENV_IN_PROJECT=true
+            pipenv install --dev --deploy
+            if [ ! -d "test-reports" ]; then
+              mkdir test-reports
+            fi
+
+      - run:
+          name: terraform
+          command: |
+            . .circleci/env.sh
+            cd infrastructure
+            echo $CIRCLE_HOSTS > scan_hosts.auto.tfvars 
+            terraform init -backend-config "bucket=${APP_NAME}-terraform-state"
+            terraform get --update
+            terraform workspace new $SSM_SOURCE_STAGE || terraform workspace select $SSM_SOURCE_STAGE
+            echo checking formatting
+            terraform fmt -check=true
+            echo making the plan
+            terraform plan -var ssm_source_stage=$SSM_SOURCE_STAGE -var account_id=$ACCOUNT_ID -var app_name=$APP_NAME -no-color -out=plan.file > terraform.plan
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - "*"
+
+      - store_artifacts:
+          path: .generated
+
+      - store_artifacts:
+          path: infrastructure/plan.file
+
+      - store_artifacts:
+          path: infrastructure/terraform.plan
+
+      - save_cache:
+          key: git-v1-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
+
+      - save_cache:
+          key: other-v1-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".terraform"
+            - ".venv"
+            - ".generated"
+            - ".pytest_cache"
+
+  unit-test:
+    executor: builder
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: unit tests
+          command: |
+            . .circleci/env.sh
+            pytest --junitxml=test-reports/junit.xml -m unit tests
+      - store_test_results:
+          path: test-reports
+
+  integration-test:
+    executor: builder
+    steps:
+      - attach_workspace:
+          at: .
+
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      - run:
+          name: integration tests
+          command: |
+            . .circleci/env.sh
+            cd infrastructure
+            terraform workspace new $DEPLOY_STAGE || terraform workspace select $DEPLOY_STAGE
+            set +e # allows us to run the cleanup
+            terraform apply --auto-approve -var ssm_source_stage=$SSM_SOURCE_STAGE -var account_id=$ACCOUNT_ID -var app_name=$APP_NAME -no-color
+            export SUCCESS=$?
+            cd ..
+            pytest --junitxml=test-reports/junit.xml -m integration tests
+            if [ $? != 0 ]; then
+              export SUCCESS=1
+            fi
+            cd infrastructure
+            terraform destroy --auto-approve -var ssm_source_stage=$SSM_SOURCE_STAGE -var account_id=$ACCOUNT_ID -var app_name=$APP_NAME -no-color
+            if [ $? != 0 ]; then
+              export SUCCESS=1
+            fi
+            exit $SUCCESS
+      - store_test_results:
+          path: test-reports
+
+  deploy:
+    executor: builder
+    steps:
+      - attach_workspace:
+          at: .
+
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      # TODO change this when we move on to having multiple environments
+      - run:
+          name: deploy
+          command: |
+            . .circleci/env.sh
+            cd infrastructure
+            terraform workspace new dev || terraform workspace select dev
+            terraform apply plan.file
+
+
+      # update the cache to include e.g. previously built docker container
+      - save_cache:
+          key: other-v1-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".terraform"
+            - ".venv"
+            - ".generated"
+            - ".pytest_cache"
+
+workflows:
+  version: 2
+  terraform-infrastructure:
+    jobs:
+      - setup
+      - unit-test:
+          requires: [ setup ]
+      - integration-test:
+          requires: [ setup ]
+      - approve:
+          type: approval
+          requires:
+            - unit-test
+            - integration-test
+          <<: *master-only
+      - deploy:
+          requires: [ approve ]
+          <<: *master-only
