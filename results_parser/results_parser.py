@@ -1,60 +1,18 @@
 import os
-import aioboto3
-import boto3
-from utils.lambda_decorators import ssm_parameters, async_handler
-from utils.json_serialisation import dumps
-from json import loads
-from utils.objectify_dict import objectify
-import tarfile
+from utils.lambda_decorators import async_handler
 import re
-import io
-import datetime
-from urllib.parse import unquote_plus
-import importlib.util
 from utils.scan_results import ResultsContext
-
-region = os.environ["REGION"]
-stage = os.environ["STAGE"]
-app_name = os.environ["APP_NAME"]
-task_name = os.environ["TASK_NAME"]
-ssm_prefix = f"/{app_name}/{stage}"
-ssm_client = aioboto3.client("ssm", region_name=region)
-s3_client = boto3.client("s3", region_name=region)
-sns_client = boto3.client("sns", region_name=region)
-
-SNS_TOPIC = f"{ssm_prefix}/tasks/{task_name}/results/arn"
+from shared_task_code.results_parser import ResultsParser
 
 
-def post_results(topic, doc_type, document):
-    r = sns_client.publish(
-        TopicArn=topic, Subject=doc_type, Message=dumps(document)
-    )
-    print(f"Published message {r['MessageId']}")
-
-
-def process_results(topic, bucket, key):
-    obj = s3_client.get_object(Bucket=bucket, Key=key)
-    content = obj["Body"].read()
-    metadata = obj["Metadata"]
+def process_results(results_context, body, **kwargs):
+    print(f"body length is {len(body)}")
     chain = {'records': []}
-    for metakey in metadata:
-        # strip out the header that AWS adds
-        chain[metakey.replace('x-amz-meta-', '')] = metadata[metakey]
-    tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(content), format=tarfile.PAX_FORMAT)
-    result_file_name = re.sub(r"\.tar.gz$", "", key.split("/", -1)[-1])
-    body = tar.extractfile(result_file_name).read().decode('utf-8').split('\n')
     is_root_ca = True
-    start_time, end_time = chain["scan_end_time"], chain["scan_end_time"]
-    scan_id = os.path.splitext(result_file_name)[0]
     if len(body) > 0 and ('error' in body[0]):
-        # write the error out to elastic
-        non_temporal_key = {
-            "address": chain['address'],
-            "address_type": chain['address_type'],
-            "ssl_chain": "No SSL"
-        }
-        results_context = ResultsContext(topic, non_temporal_key, scan_id, start_time, end_time, task_name, sns_client)
-
+        results_context.push_context({"ssl_chain": "No SSL"})
+        results_context.post_results("data", {}, include_summaries=True)
+        results_context.pop_context()
     else:
         for line in body:
             if 'depth' in line:
@@ -70,16 +28,10 @@ def process_results(topic, bucket, key):
                 chain['records'].append(record)
             if 'DONE' in line:
                 break
+        results_context.push_context({"ssl_chain": "Valid"})
 
-        non_temporal_key = {
-            "address": chain['address'],
-            "address_type": chain['address_type'],
-            "ssl_chain": "Valid"
-        }
         # TODO store start_time correctly
         # TODO end_time will be correct once the scheduler is in place to change the key (currently end_time is used)
-
-        results_context = ResultsContext(topic, non_temporal_key, scan_id, start_time, end_time, task_name, sns_client)
 
         for cert in chain['records']:
             results_context.push_context({"depth": f"{cert['depth']}", "root_ca": f"{cert['rootCA']}"})
@@ -91,15 +43,7 @@ def process_results(topic, bucket, key):
             results_context.pop_context()
 
 
-@ssm_parameters(
-    ssm_client,
-    SNS_TOPIC
-)
-@async_handler
+@async_handler()
 async def parse_results(event, _):
-    topic = event['ssm_params'][SNS_TOPIC]
-    for record in event["Records"]:
-        s3_object = objectify(record["s3"])
-        bucket = s3_object.bucket.name
-        key = unquote_plus(s3_object.object.key)
-        process_results(topic, bucket, key)
+    results_parser = ResultsParser(event)
+    results_parser.start(IterateResults=process_results)

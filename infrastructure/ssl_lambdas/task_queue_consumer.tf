@@ -32,6 +32,7 @@ resource "aws_lambda_function" "queue_consumer" {
 
   layers = [
     data.aws_ssm_parameter.utils_layer.value,
+    data.aws_ssm_parameter.shared_task_code_layer.value,
   ]
 
   environment {

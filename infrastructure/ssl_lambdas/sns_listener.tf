@@ -4,6 +4,9 @@ resource "aws_lambda_permission" "with_sns" {
   function_name = aws_lambda_function.sns_listener.function_name
   principal     = "sns.amazonaws.com"
   source_arn    = data.aws_ssm_parameter.sns_nmap_topic_arn.value
+
+
+
 }
 
 resource "aws_sns_topic_subscription" "lambda" {
@@ -38,9 +41,10 @@ resource "aws_lambda_function" "sns_listener" {
   runtime          = "python3.7"
   filename         = local.ssl_zip
   source_code_hash = data.external.ssl_zip.result.hash
-
+  timeout          = 30
   layers = [
     data.aws_ssm_parameter.utils_layer.value,
+    data.aws_ssm_parameter.shared_task_code_layer.value,
   ]
 
   environment {
@@ -56,5 +60,6 @@ resource "aws_lambda_function" "sns_listener" {
     workspace = terraform.workspace
     app_name  = var.app_name
   }
+
 }
 

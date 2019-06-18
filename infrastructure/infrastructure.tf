@@ -41,7 +41,14 @@ variable "known_deployment_stages" {
   default = ["dev", "qa", "prod"]
 }
 
+variable "use_xray" {
+  type        = string
+  description = "Whether to instrument lambdas"
+  default     = false
+}
+
 provider "aws" {
+  version             = "~> 2.13"
   region              = var.aws_region
   profile             = var.app_name
   allowed_account_ids = [var.account_id]
@@ -60,13 +67,6 @@ locals {
 }
 
 module "elastic_resources" {
-  # TF-UPGRADE-TODO: In Terraform v0.11 and earlier, it was possible to
-  # reference a relative module source without a preceding ./, but it is no
-  # longer supported in Terraform v0.12.
-  #
-  # If the below module source is indeed a relative local path, add ./ to the
-  # start of the source string. If that is not the case, then leave it as-is
-  # and remove this TODO comment.
   source           = "./elastic_resources"
   aws_region       = var.aws_region
   app_name         = var.app_name
@@ -85,11 +85,13 @@ module "ssl_task" {
 
   app_name                      = var.app_name
   aws_region                    = var.aws_region
+  use_xray                      = var.use_xray
   task_name                     = var.task_name
   subscribe_elastic_to_notifier = true
   account_id                    = var.account_id
   ssm_source_stage              = local.ssm_source_stage
   transient_workspace           = false == contains(var.known_deployment_stages, terraform.workspace)
+  results_parser_arn            = module.openssl.results_parser_arn
 }
 
 module "openssl" {

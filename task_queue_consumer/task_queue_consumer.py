@@ -1,24 +1,13 @@
+import os
 
+from utils.lambda_decorators import async_handler
+from utils.json_serialisation import dumps
 import subprocess
-from datetime import datetime
-from json import loads
 import re
 from netaddr.core import AddrFormatError
 from netaddr import IPNetwork
-from utils.json_serialisation import dumps
-from utils.lambda_decorators import ssm_parameters, async_handler
-import os
-import aioboto3
-import boto3
+from shared_task_code.task_queue_consumer import TaskQueueConsumer
 
-region = os.environ["REGION"]
-stage = os.environ["STAGE"]
-app_name = os.environ["APP_NAME"]
-task_name = os.environ["TASK_NAME"]
-ssm_prefix = f"/{app_name}/{stage}"
-ssm_client = aioboto3.client("ssm", region_name=region)
-
-RESULTS = f"{ssm_prefix}/tasks/{task_name}/s3/results/id"
 
 # <name> from https://tools.ietf.org/html/rfc952#page-5
 ALLOWED_NAME = re.compile(r"(?!-)[a-z0-9-]{1,63}(?<!-)$", re.IGNORECASE)
@@ -56,12 +45,10 @@ def is_valid_hostname(hostnameport):
         return all(ALLOWED_NAME.match(label) for label in labels)
 
 
-def openssl(event, scan, message_id):
+def openssl(event, scan, message_id, results_filename, results_dir):
     print('running openssl')
     cmd = f"openssl s_client -showcerts -connect {scan['target']}"
-    date_string = f"{datetime.now():%Y-%m-%dT%H%M%S%Z}"
-    s3file = f"{message_id}-{date_string}-{task_name}.txt"
-    mergedf = open(f"/tmp/{s3file}", "w")
+    mergedf = open(results_filename, "w")
     try:
 
         out = subprocess.check_output(f"echo | {cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
@@ -76,33 +63,18 @@ def openssl(event, scan, message_id):
         # TODO: put this in DLQ once implemented
         mergedf.write(f"error: {e.output}")
     mergedf.close()
-    subprocess.check_output(f'cd /tmp;tar -czvf "{s3file}.tar.gz" "{s3file}"', shell=True)
-    s3 = boto3.resource("s3", region_name=region)
-    s3.meta.client.upload_file(
-        f"/tmp/{s3file}.tar.gz",
-        event["ssm_params"][RESULTS],
-        f"{s3file}.tar.gz",
-        ExtraArgs={'ServerSideEncryption': "AES256", 'Metadata': scan})
 
 
-def run_task(event, scan, message_id):
+def run_task(event, scan, message_id, results_filename, results_dir):
     if not is_valid_hostname(scan["target"]):
         raise ValueError(
             f"Invalid hostname and/or port for openssl task {scan['target']}")
         return
     print(f"open ssl scan: {scan['target']}")
-    openssl(event, scan, message_id)
+    openssl(event, scan, message_id, results_filename, results_dir)
 
 
-@ssm_parameters(
-    ssm_client,
-    RESULTS
-)
-@async_handler
+@async_handler()
 async def submit_scan_task(event, _):
-
-    print(f"Processing event {dumps(event)}")
-    for record in event["Records"]:
-        print(f"OpenSSL Scan requested: {dumps(record['body'])}")
-        scan = loads(record["body"])
-        run_task(event, scan, f"{record['messageId']}")
+    task_queue_consumer = TaskQueueConsumer(event)
+    task_queue_consumer.start(TaskCode=run_task)
