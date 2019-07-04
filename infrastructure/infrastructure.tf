@@ -89,24 +89,24 @@ data "external" "ssl_zip" {
 module "port_detector" {
   source = "./port_detector"
 
-  account_id = var.account_id
+  account_id          = var.account_id
   aws_region          = var.aws_region
   app_name            = var.app_name
   use_xray            = var.use_xray
   transient_workspace = local.transient_workspace
   ssm_source_stage    = local.ssm_source_stage
 
-  ssl_zip       = local.ssl_zip
+  ssl_zip = local.ssl_zip
 }
 
 locals {
   port_443_filter_policy = {
-     "port_id": ["443"],
+    "port_id" : ["443"],
   }
   # To avoid scanning port 443 twice exclude it from this second subscription
   service_https_filter_policy = {
-     "service": ["https"],
-     "port_id":  [{"anything-but": "443"}]
+    "service" : ["https"],
+    "port_id" : [{ "anything-but" : "443" }]
   }
 }
 
@@ -116,7 +116,7 @@ resource "aws_sns_topic_subscription" "subscribe_ssl_to_port_443" {
   protocol             = "sqs"
   endpoint             = module.ssl_task.task_queue
   raw_message_delivery = false
-  filter_policy = jsonencode(local.port_443_filter_policy)
+  filter_policy        = jsonencode(local.port_443_filter_policy)
 }
 
 # connect the ssl scanner to the port detector
@@ -125,10 +125,11 @@ resource "aws_sns_topic_subscription" "subscribe_ssl_to_service_https" {
   protocol             = "sqs"
   endpoint             = module.ssl_task.task_queue
   raw_message_delivery = false
-  filter_policy = jsonencode(local.service_https_filter_policy)
+  filter_policy        = jsonencode(local.service_https_filter_policy)
 }
 
 module "ssl_task" {
+  # source = "github.com/ministryofjustice/securityanalytics-taskexecution//infrastructure/lambda_task"
   source = "../../securityanalytics-taskexecution/infrastructure/lambda_task"
 
   account_id          = var.account_id
@@ -147,6 +148,7 @@ module "ssl_task" {
 
   # Results
   lambda_zip           = local.ssl_zip
+  lambda_hash          = data.external.ssl_zip.result.hash
   results_parse_lambda = "results_parser.invoke"
 
   # General

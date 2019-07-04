@@ -9,7 +9,7 @@ class SslScanner(LambdaScanner):
     def __init__(self):
         super().__init__([])
 
-    def scan(self, scan_request_id, scan_request):
+    async def scan(self, scan_request_id, scan_request):
         scan_request = loads(scan_request)
         target = scan_request["target"]
 
@@ -21,21 +21,20 @@ class SslScanner(LambdaScanner):
         print('running openssl')
         cmd = f"openssl s_client -showcerts -connect {target}"
         mergedf = io.BytesIO()
-        try:
 
-            # TODO not checking here for success
+        try:
             out = subprocess.check_output(f"echo | {cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
             # openssl outputs on two tty streams, so merge the two together and put in S3 for processing later
-            mergedf.write("scan={dumps(scan_request)}\n".encode('UTF-8'))
-            with open("/tmp/tty2.txt", "r") as f:
-                mergedf.write(f.read().encode('UTF-8'))
-            with open("/tmp/tty1.txt", "r") as f:
-                mergedf.write(f.read().encode('UTF-8'))
 
         except subprocess.CalledProcessError as e:
-            # TODO: put this in DLQ once implemented
-            mergedf.write(f"error: {e.output}".encode('UTF-8'))
-        mergedf.close()
+            # openssl will generate an error if there's a problem in the chain - just get the output and do something with it
+            pass
+
+        with open("/tmp/tty2.txt", "r") as f:
+            mergedf.write(f.read().encode('UTF-8'))
+        with open("/tmp/tty1.txt", "r") as f:
+            mergedf.write(f.read().encode('UTF-8'))
+
         mergedf.seek(0)
 
-        return mergedf, {}
+        return mergedf, "txt", scan_request
