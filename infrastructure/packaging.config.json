@@ -1,16 +1,16 @@
 {
   "base_dirs": [
     {
-      "dir": "../task_queue_consumer",
-      "base_in_zip": "task_queue_consumer"
+      "dir": "../ssl_scanner",
+      "base_in_zip": "ssl_scanner"
     },
     {
       "dir": "../results_parser",
       "base_in_zip": "results_parser"
     },
     {
-      "dir": "../sns_listener",
-      "base_in_zip": "sns_listener"
+      "dir": "../port_detector",
+      "base_in_zip": "port_detector"
     },
     {
       "dir": "../.venv/Lib/site-packages",

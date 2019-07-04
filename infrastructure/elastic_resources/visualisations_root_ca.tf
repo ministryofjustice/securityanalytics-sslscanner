@@ -12,7 +12,6 @@ module "root_ca_distro" {
 
   aws_region       = var.aws_region
   ssm_source_stage = var.ssm_source_stage
-  task_name        = var.task_name
   object_template  = "${path.module}/visualisations/root_ca/root_ca_distro.vis.json"
 
   object_substitutions = {
@@ -22,5 +21,6 @@ module "root_ca_distro" {
 
   object_type  = "visualization"
   object_title = "Distribution of Root CAs"
+  es_domain = data.aws_ssm_parameter.es_domain.value
 }
 

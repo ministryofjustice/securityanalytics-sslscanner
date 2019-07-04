@@ -15,6 +15,7 @@ module "ssl_index_data" {
   index_file       = "${path.module}/indexes/ssl-data.index.json"
   index_name       = "data"
   task_name        = var.task_name
+  es_domain        = data.aws_ssm_parameter.es_domain.value
 }
 
 module "index_pattern_data_history" {
@@ -31,12 +32,12 @@ module "index_pattern_data_history" {
 
   aws_region           = var.aws_region
   ssm_source_stage     = var.ssm_source_stage
-  task_name            = var.task_name
   object_template      = "${path.module}/indexes/ssl-data.pattern.json"
   object_substitutions = {}
 
   object_type  = "index-pattern"
   object_title = "${var.task_name}:data_history:read*"
+  es_domain        = data.aws_ssm_parameter.es_domain.value
 }
 
 module "index_pattern_data_snapshot" {
@@ -53,11 +54,11 @@ module "index_pattern_data_snapshot" {
 
   aws_region           = var.aws_region
   ssm_source_stage     = var.ssm_source_stage
-  task_name            = var.task_name
   object_template      = "${path.module}/indexes/ssl-data.pattern.json"
   object_substitutions = {}
 
   object_type  = "index-pattern"
   object_title = "${var.task_name}:data_snapshot:read*"
+  es_domain        = data.aws_ssm_parameter.es_domain.value
 }
 

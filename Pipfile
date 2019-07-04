@@ -1,5 +1,8 @@
 [dev-packages]
 pytest = "*"
+requests = "*"
+requests-aws4auth = "*"
+aws-xray-sdk = "*"
 
 [packages]
 netaddr="*"

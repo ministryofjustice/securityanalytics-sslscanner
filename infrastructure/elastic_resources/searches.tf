@@ -12,7 +12,6 @@ module "root_ca_search" {
 
   aws_region       = var.aws_region
   ssm_source_stage = var.ssm_source_stage
-  task_name        = var.task_name
   object_template  = "${path.module}/searches/root_ca.search.json"
 
   object_substitutions = {
@@ -21,5 +20,6 @@ module "root_ca_search" {
 
   object_type  = "search"
   object_title = "RootCA for SSL hosts"
+  es_domain = data.aws_ssm_parameter.es_domain.value
 }
 
