@@ -11,11 +11,17 @@ class SslResultsParser(ResultsParser):
         ResultsParser.__init__(self, [])
 
     async def parse_results(self, results_file_name, results_doc, meta_data):
-
+        print(meta_data)
         scan_id = os.path.splitext(results_file_name)[0]
         start_time = meta_data["scan_start_time"]
         end_time = meta_data["scan_end_time"]
-        results_context = self.create_results_context({}, scan_id, start_time, end_time)
+
+        non_temporal_key = {
+            "address": meta_data["address"],
+            "address_type": meta_data["address_type"]
+        }
+
+        results_context = self.create_results_context(non_temporal_key, scan_id, start_time, end_time)
 
         chain = {'records': []}
         body = results_doc.read().decode('utf-8').split('\n')
