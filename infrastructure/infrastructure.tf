@@ -99,16 +99,16 @@ module "port_detector" {
   ssl_zip = local.ssl_zip
 }
 
-locals {
-  port_443_filter_policy = {
-    "port_id" : ["443"],
-  }
-  # To avoid scanning port 443 twice exclude it from this second subscription
-  service_https_filter_policy = {
-    "service" : ["https"],
-    "port_id" : [{ "anything-but" : "443" }]
-  }
-}
+# locals {
+#   port_443_filter_policy = {
+#     "port_id" : ["443"],
+#   }
+#   # To avoid scanning port 443 twice exclude it from this second subscription
+#   service_https_filter_policy = {
+#     "service" : ["https"],
+#     "port_id" : [{ "anything-but" : "443" }]
+#   }
+# }
 
 # # connect the ssl scanner to the port detector
 # resource "aws_sns_topic_subscription" "subscribe_ssl_to_port_443" {
@@ -128,7 +128,6 @@ resource "aws_sns_topic_subscription" "subscribe_ssl_to_service_https" {
   protocol             = "sqs"
   endpoint             = module.ssl_task.task_queue
   raw_message_delivery = false
-  # filter_policy        = jsonencode(local.service_https_filter_policy)
 }
 
 data "aws_iam_policy_document" "resolved_addr_policy_doc" {
@@ -147,8 +146,8 @@ data "aws_iam_policy_document" "resolved_addr_policy_doc" {
 }
 
 module "ssl_task" {
-  # source = "github.com/ministryofjustice/securityanalytics-taskexecution//infrastructure/lambda_task"
-  source = "../../securityanalytics-taskexecution/infrastructure/lambda_task"
+  source = "github.com/ministryofjustice/securityanalytics-taskexecution//infrastructure/lambda_task"
+  # source = "../../securityanalytics-taskexecution/infrastructure/lambda_task"
 
   account_id                = var.account_id
   aws_region                = var.aws_region
