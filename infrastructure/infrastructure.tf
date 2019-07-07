@@ -160,3 +160,4 @@ module "elastic_resources" {
   ssm_source_stage = local.ssm_source_stage
 }
 
+gi
