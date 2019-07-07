@@ -29,8 +29,8 @@ class SslResultsParser(ResultsParser):
         if len(body) > 0 and ('error' in body[0]):
             results_context.push_context({"ssl_chain": "No SSL", "hostname": meta_data["target"]})
             results_context.post_results("data", {}, include_summaries=True)
-            results_context.publish_results()
-            results_context.pop_context()
+            await results_context.publish_results()
+            
         else:
             record = {}
             verify_code = ''
@@ -77,9 +77,3 @@ class SslResultsParser(ResultsParser):
                 results_context.post_results("data", results, include_summaries=True)
                 await results_context.publish_results()
                 results_context.pop_context()
-
-
-@async_handler()
-async def parse_results(event, _):
-    results_parser = ResultsParser(event)
-    results_parser.start(IterateResults=process_results)

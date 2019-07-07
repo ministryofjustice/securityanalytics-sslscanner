@@ -1,0 +1,18 @@
+{
+    "attributes": {
+        "title": "${object_title}",
+        "description": "A search returning any errors from checking the SSL certificate chain",
+        "hits": 0,
+        "columns": [
+            "O"
+        ],
+        "sort": [
+            "scan_end_time",
+            "desc"
+        ],
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"index\":\"${index}\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[{\"meta\":{\"index\":\"${index}\",\"negate\":false,\"disabled\":false,\"alias\":null,\"type\":\"exists\",\"key\":\"verify_reason\",\"value\":\"exists\"},\"exists\":{\"field\":\"verify_reason\"},\"$state\":{\"store\":\"appState\"}},{\"meta\":{\"index\":\"${index}\",\"type\":\"phrases\",\"key\":\"verify_reason\",\"value\":\"\\\"\\\", ok\",\"params\":[\"\\\"\\\"\",\"ok\"],\"negate\":true,\"disabled\":false,\"alias\":null},\"query\":{\"bool\":{\"should\":[{\"match_phrase\":{\"verify_reason\":\"\\\"\\\"\"}},{\"match_phrase\":{\"verify_reason\":\"ok\"}}],\"minimum_should_match\":1}},\"$state\":{\"store\":\"appState\"}}]}"
+        }
+    }
+}
