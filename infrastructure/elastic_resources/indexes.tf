@@ -37,7 +37,7 @@ module "index_pattern_data_history" {
 
   object_type  = "index-pattern"
   object_title = "${var.task_name}:data_history:read*"
-  es_domain        = data.aws_ssm_parameter.es_domain.value
+  es_domain    = data.aws_ssm_parameter.es_domain.value
 }
 
 module "index_pattern_data_snapshot" {
@@ -59,6 +59,6 @@ module "index_pattern_data_snapshot" {
 
   object_type  = "index-pattern"
   object_title = "${var.task_name}:data_snapshot:read*"
-  es_domain        = data.aws_ssm_parameter.es_domain.value
+  es_domain    = data.aws_ssm_parameter.es_domain.value
 }
 

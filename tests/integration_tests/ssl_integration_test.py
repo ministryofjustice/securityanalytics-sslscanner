@@ -2,6 +2,7 @@ import pytest
 from json import loads
 import re
 from tests.scan_integration_test_utils.scan_integration_tester import ScanIntegrationTester
+from utils.json_serialisation import dumps
 
 MESSAGE_ID = re.compile(r"^([a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}).*$")
 
@@ -23,13 +24,13 @@ async def test_integration():
                # we should setup a host to scan as part of the test setup instead
                MessageBody=dumps({
                    "scan_id": "Scan5",
-                   "port_id": port_data["Data"]["port_id"],
-                   "protocol": port_data["Data"]["protocol"],
-                   "address": port_data["Data"]["address"],
-                   "address_type": port_data["Data"]["address_type"],
-                   "service": port_data["Data"]["service"] if "service" in port_data["Data"] else "",
-                   "product": port_data["Data"]["product"] if "product" in port_data["Data"] else "",
-                   "version": port_data["Data"]["version"] if "version" in port_data["Data"] else "",
+                   "port_id": 80,
+                   "protocol": "tcp",
+                   "address": "123.123.123.123",
+                   "address_type": "ip",
+                   "service": "http",
+                   "product": "apache",
+                   "version": "0.4",
                })
             )
             self.request_msg_id = resp["MessageId"]

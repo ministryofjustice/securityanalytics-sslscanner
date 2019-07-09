@@ -48,9 +48,9 @@ resource "aws_lambda_function" "port_detector" {
 
   environment {
     variables = {
-      REGION   = var.aws_region
-      STAGE    = terraform.workspace
-      APP_NAME = var.app_name
+      REGION    = var.aws_region
+      STAGE     = terraform.workspace
+      APP_NAME  = var.app_name
       GLUE_NAME = "port_detector"
     }
   }

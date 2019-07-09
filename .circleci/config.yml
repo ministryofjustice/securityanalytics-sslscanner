@@ -16,8 +16,8 @@ jobs:
     steps:
       - restore_cache:
           keys:
-            - git-v1-{{ .Branch }}-
-            - git-v1-
+            - git-v4-{{ .Branch }}-
+            - git-v4-
 
       - checkout
 
@@ -30,14 +30,15 @@ jobs:
 
       - restore_cache:
           keys:
-            - other-v1-{{ .Branch }}-
-            - other-v1-
+            - other-v4-{{ .Branch }}-
+            - other-v4-
 
       - run:
           name: install virtual env
           command: |
             export PIPENV_VENV_IN_PROJECT=true
             pipenv install --dev --deploy
+            pipenv clean
             if [ ! -d "test-reports" ]; then
               mkdir test-reports
             fi
@@ -47,12 +48,12 @@ jobs:
           command: |
             . .circleci/env.sh
             cd infrastructure
-            echo $CIRCLE_HOSTS > scan_hosts.auto.tfvars 
-            terraform init -backend-config "bucket=${APP_NAME}-terraform-state"
+            echo $CIRCLE_HOSTS > scan_hosts.auto.tfvars
+            terraform init -reconfigure -backend-config "bucket=$APP_NAME-terraform-state"
             terraform get --update
             terraform workspace new $SSM_SOURCE_STAGE || terraform workspace select $SSM_SOURCE_STAGE
             echo checking formatting
-            terraform fmt -check=true
+            terraform fmt -recursive -check=true
             echo making the plan
             terraform plan -var ssm_source_stage=$SSM_SOURCE_STAGE -var account_id=$ACCOUNT_ID -var app_name=$APP_NAME -no-color -out=plan.file > terraform.plan
 
@@ -70,15 +71,18 @@ jobs:
       - store_artifacts:
           path: infrastructure/terraform.plan
 
+      - store_artifacts:
+          path: .generated/*
+
       - save_cache:
-          key: git-v1-{{ .Branch }}-{{ .Revision }}
+          key: git-v4-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
 
       - save_cache:
-          key: other-v1-{{ .Branch }}-{{ .Revision }}
+          key: other-v4-{{ .Branch }}-{{ .Revision }}
           paths:
-            - ".terraform"
+            - "infrastructure/.terraform"
             - ".venv"
             - ".generated"
             - ".pytest_cache"
@@ -108,6 +112,7 @@ jobs:
       - run:
           name: integration tests
           command: |
+            sleep 15
             . .circleci/env.sh
             cd infrastructure
             terraform workspace new $DEPLOY_STAGE || terraform workspace select $DEPLOY_STAGE
@@ -115,6 +120,11 @@ jobs:
             terraform apply --auto-approve -var ssm_source_stage=$SSM_SOURCE_STAGE -var account_id=$ACCOUNT_ID -var app_name=$APP_NAME -no-color
             export SUCCESS=$?
             cd ..
+            export TASK_NAME=nmap
+            export STAGE=$DEPLOY_STAGE
+            # TODO should not hard code this here
+            export REGION=eu-west-2
+
             pytest --junitxml=test-reports/junit.xml -m integration tests
             if [ $? != 0 ]; then
               export SUCCESS=1
@@ -124,6 +134,8 @@ jobs:
             if [ $? != 0 ]; then
               export SUCCESS=1
             fi
+            terraform workspace select default
+            terraform workspace delete $DEPLOY_STAGE
             exit $SUCCESS
       - store_test_results:
           path: test-reports
@@ -143,18 +155,67 @@ jobs:
           command: |
             . .circleci/env.sh
             cd infrastructure
+            terraform init -reconfigure -backend-config "bucket=$APP_NAME-terraform-state"
             terraform workspace new dev || terraform workspace select dev
+            terraform get --update
             terraform apply plan.file
 
+  deploy-moj:
+    executor: builder
+    steps:
+      - restore_cache:
+          keys:
+            - git-v4-{{ .Branch }}-
+            - git-v4-
 
-      # update the cache to include e.g. previously built docker container
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      - checkout
+
+      - restore_cache:
+          keys:
+            - tf-moj-v4-{{ .Branch }}-
+            - tf-moj-v4-
+
+      - run:
+          name: update git submodule
+          command: |
+            git submodule init
+            git submodule update --remote
+            git submodule sync
+
+      - run:
+          name: install virtual env
+          command: |
+            export PIPENV_VENV_IN_PROJECT=true
+            pipenv install --dev --deploy
+            if [ ! -d "test-reports" ]; then
+              mkdir test-reports
+            fi
+
+      - run:
+          name: terraform apply
+          command: |
+            unset AWS_PROFILE
+            export AWS_ACCESS_KEY_ID=$MOJ_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$MOJ_SECRET_ACCESS_KEY
+            . .circleci/env.sh
+            cd infrastructure
+            terraform init -reconfigure -backend-config "bucket=$MOJ_APP_NAME-terraform-state"
+            terraform get --update
+            terraform workspace new dev || terraform workspace select dev
+            terraform apply -auto-approve -var ssm_source_stage=$SSM_SOURCE_STAGE -var account_id=$MOJ_ACCOUNT_ID -var app_name=$MOJ_APP_NAME
+
       - save_cache:
-          key: other-v1-{{ .Branch }}-{{ .Revision }}
+          key: git-v4-{{ .Branch }}-{{ .Revision }}
           paths:
-            - ".terraform"
-            - ".venv"
-            - ".generated"
-            - ".pytest_cache"
+            - ".git"
+
+      - save_cache:
+          key: tf-moj-v4-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - "infrastructure/.terraform"
 
 workflows:
   version: 2
@@ -172,5 +233,8 @@ workflows:
             - integration-test
           <<: *master-only
       - deploy:
+          requires: [ approve ]
+          <<: *master-only
+      - deploy-moj:
           requires: [ approve ]
           <<: *master-only

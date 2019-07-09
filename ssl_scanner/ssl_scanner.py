@@ -19,13 +19,13 @@ class SslScanner(LambdaScanner):
         ]
 
     @staticmethod
-    def get_hosts(addr, db_name):
+    def get_hosts(address, db_name):
         # get the hostname(s) that correspond with the input IP address
         # you can still manually pass through a hostname, which will return an
         # empty array
         dynamodb = boto3.resource("dynamodb")
         table = dynamodb.Table(db_name)
-        response = table.query(KeyConditionExpression=Key("Address").eq(addr))
+        response = table.query(KeyConditionExpression=Key("Address").eq(address))
         hosts = {}
         latest_time = 0
         for item in response["Items"]:
@@ -37,7 +37,7 @@ class SslScanner(LambdaScanner):
             if host[-1] == ".":
                 host = host[:-1]
             ret.append(host)
-        print(addr, ret)
+        print(address, ret)
         return ret
 
     async def process_event(self, scan_request_id, scan_request):
