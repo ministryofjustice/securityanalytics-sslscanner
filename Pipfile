@@ -2,7 +2,9 @@
 pytest = "*"
 requests = "*"
 requests-aws4auth = "*"
+pytest-asyncio = "*"
 aws-xray-sdk = "*"
+aiohttp="*"
 
 [packages]
 netaddr="*"
