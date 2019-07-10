@@ -86,30 +86,27 @@ data "external" "ssl_zip" {
 
 
 # TODO This module doesn't belong in the ssl scan, most of the secondary scans require it's input
-//module "port_detector" {
-//  source = "./port_detector"
-//
-//  account_id          = var.account_id
-//  aws_region          = var.aws_region
-//  app_name            = var.app_name
-//  use_xray            = var.use_xray
-//  transient_workspace = local.transient_workspace
-//  ssm_source_stage    = local.ssm_source_stage
-//
-//  ssl_zip = local.ssl_zip
-//}
-//
-//# TODO: can't do this for multiple policies, so this needs revisiting and right
-//# now filtering will have to be done by the scanner
-//
-//# connect the ssl scanner to the port detector
-//resource "aws_sns_topic_subscription" "subscribe_ssl_to_service_https" {
-//  topic_arn            = module.port_detector.notifier
-//  protocol             = "sqs"
-//  endpoint             = module.ssl_task.task_queue
-//  raw_message_delivery = false
-//}
-//
+module "port_detector" {
+  source = "./port_detector"
+
+  account_id          = var.account_id
+  aws_region          = var.aws_region
+  app_name            = var.app_name
+  use_xray            = var.use_xray
+  transient_workspace = local.transient_workspace
+  ssm_source_stage    = local.ssm_source_stage
+
+  ssl_zip = local.ssl_zip
+}
+
+# connect the ssl scanner to the port detector
+resource "aws_sns_topic_subscription" "subscribe_ssl_to_service_https" {
+  topic_arn            = module.port_detector.notifier
+  protocol             = "sqs"
+  endpoint             = module.ssl_task.task_queue
+  raw_message_delivery = false
+}
+
 data "aws_iam_policy_document" "resolved_addr_policy_doc" {
   statement {
     effect = "Allow"
@@ -154,11 +151,11 @@ module "ssl_task" {
   subscribe_es_to_output            = true
 }
 
-//module "elastic_resources" {
-//  source           = "./elastic_resources"
-//  aws_region       = var.aws_region
-//  app_name         = var.app_name
-//  task_name        = var.task_name
-//  ssm_source_stage = local.ssm_source_stage
-//}
+module "elastic_resources" {
+  source           = "./elastic_resources"
+  aws_region       = var.aws_region
+  app_name         = var.app_name
+  task_name        = var.task_name
+  ssm_source_stage = local.ssm_source_stage
+}
 
