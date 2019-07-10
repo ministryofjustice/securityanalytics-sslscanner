@@ -1,14 +1,11 @@
 import os
-from utils.lambda_decorators import async_handler
 import re
-from utils.scan_results import ResultsContext
 from shared_task_code.base_results_parser import ResultsParser
 
 
 class SslResultsParser(ResultsParser):
-
     def __init__(self):
-        ResultsParser.__init__(self, [])
+        super().__init__()
 
     async def parse_results(self, results_file_name, results_doc, meta_data):
         print(meta_data)

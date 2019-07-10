@@ -99,26 +99,6 @@ module "port_detector" {
   ssl_zip = local.ssl_zip
 }
 
-# locals {
-#   port_443_filter_policy = {
-#     "port_id" : ["443"],
-#   }
-#   # To avoid scanning port 443 twice exclude it from this second subscription
-#   service_https_filter_policy = {
-#     "service" : ["https"],
-#     "port_id" : [{ "anything-but" : "443" }]
-#   }
-# }
-
-# # connect the ssl scanner to the port detector
-# resource "aws_sns_topic_subscription" "subscribe_ssl_to_port_443" {
-#   topic_arn            = module.port_detector.notifier
-#   protocol             = "sqs"
-#   endpoint             = module.ssl_task.task_queue
-#   raw_message_delivery = false
-#   filter_policy        = jsonencode(local.port_443_filter_policy)
-# }
-
 # TODO: can't do this for multiple policies, so this needs revisiting and right
 # now filtering will have to be done by the scanner
 

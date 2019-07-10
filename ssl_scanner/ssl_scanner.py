@@ -44,6 +44,7 @@ class SslScanner(LambdaScanner):
         scan_request = loads(scan_request)
         print(scan_request)
         msg = loads(scan_request["Message"])
+        print(msg)
         if msg["port_id"] == "443" or msg["service"] == "https":
             print(f"address {msg['address']}")
             host_names = self.get_hosts(msg["address"], self.get_ssm_param(self._dynamodb_param))
