@@ -40,7 +40,7 @@ class SslScanner(LambdaScanner):
         print(address, ret)
         return ret
 
-    async def process_event(self, scan_request_id, scan_request):
+    async def scan(self, scan_request_id, scan_request):
         scan_request = loads(scan_request)
         print(scan_request)
         msg = loads(scan_request["Message"])
