@@ -13,7 +13,3 @@ data "aws_ssm_parameter" "dead_letter_bucket_name" {
 data "aws_ssm_parameter" "dead_letter_bucket_arn" {
   name = "/${var.app_name}/${var.ssm_source_stage}/s3/dead_letters/arn"
 }
-
-data "aws_ssm_parameter" "sns_nmap_results_topic_arn" {
-  name = "/${var.app_name}/${terraform.workspace}/tasks/nmap/results/arn"
-}
