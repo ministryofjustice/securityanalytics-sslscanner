@@ -27,3 +27,7 @@ variable "use_xray" {
 variable "ssl_zip" {
   type = string
 }
+
+variable "results_topic_arn" {
+  type = string
+}
