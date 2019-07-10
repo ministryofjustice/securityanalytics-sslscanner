@@ -9,6 +9,7 @@ aiohttp="*"
 [packages]
 netaddr="*"
 aioboto3 = "*"
+pytz="*"
 
 [requires]
 python_version = "3.7"
