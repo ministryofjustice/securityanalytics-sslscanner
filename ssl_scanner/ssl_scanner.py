@@ -23,9 +23,11 @@ class SslScanner(LambdaScanner):
         # get the hostname(s) that correspond with the input IP address
         # you can still manually pass through a hostname, which will return an
         # empty array
+        print("getting hosts")
         dynamodb = boto3.resource("dynamodb")
         table = dynamodb.Table(db_name)
         response = table.query(KeyConditionExpression=Key("Address").eq(address))
+        print(f"dns response {response}")
         hosts = {}
         latest_time = 0
         for item in response["Items"]:
@@ -58,20 +60,24 @@ class SslScanner(LambdaScanner):
                 print("running openssl")
                 cmd = f"openssl s_client -showcerts -connect {target}"
                 mergedf = io.BytesIO()
-
+                print("running wild")
                 try:
                     # openssl outputs on two tty streams, so merge the two together and put in S3 for processing later
-                    subprocess.check_output(f"echo | {cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
-
-                except subprocess.CalledProcessError:
+                    out = subprocess.check_output(f"echo | {cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
+                    print(f"wwwww{out}")
+                except subprocess.CalledProcessError as e:
                     # openssl will generate an error if there"s a problem in the chain
                     # that is used to source the error info and we do want to suppress this exception
                     pass
                 scan_end_time = iso_date_string_from_timestamp(datetime.now().timestamp())
                 with open("/tmp/tty2.txt", "r") as f:
-                    mergedf.write(f.read().encode("UTF-8"))
+                    file2 = f.read().encode("UTF-8")
+                    print(f"file2{file2}")
+                    mergedf.write(file2)
                 with open("/tmp/tty1.txt", "r") as f:
-                    mergedf.write(f.read().encode("UTF-8"))
+                    file1 = f.read().encode("UTF-8")
+                    print(f"file1{file1}")
+                    mergedf.write(file1)
 
                 mergedf.seek(0)
-                await self.write_file(f"{scan_request_id}-{host}", mergedf, ".txt", msg, scan_start_time, scan_end_time)
+                await self.write_results_set(f"{scan_request_id}-{host}", mergedf, ".txt", msg, scan_start_time, scan_end_time)

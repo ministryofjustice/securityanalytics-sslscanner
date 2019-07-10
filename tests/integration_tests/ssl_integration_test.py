@@ -4,6 +4,7 @@ import re
 from tests.scan_integration_test_utils.scan_integration_tester import ScanIntegrationTester
 from utils.json_serialisation import dumps
 import aioboto3
+from boto3.dynamodb.conditions import Key
 
 MESSAGE_ID = re.compile(r"^([a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}).*$")
 
@@ -20,25 +21,29 @@ async def test_integration():
             self._dynamodb_param = f"{self.ssm_source_stage_prefix}/scheduler/dynamodb/resolved_addresses/id"
 
         def ssm_parameters_to_load(self):
-            return [self._dynamodb_param]
+            return super().ssm_parameters_to_load() + [self._dynamodb_param]
 
         async def send_request(self):
             db_name = self.get_ssm_param(self._dynamodb_param)
-            dynamodb = aioboto3.resource("dynamodb")
+            dynamodb = aioboto3.resource("dynamodb", region_name=self.region)
             table = dynamodb.Table(db_name)
 
             # so the ssl scan scan be tested we need to give it an entry in dynamo
-            await table.update_item(
+            # TODO need to stand up our own hosts to scan not use scanme
+            respa = await table.update_item(
                 Key={
-                    "Address": "123.123.123.123"
+                    "Address": "92.242.132.24",
+                    "DnsIngestTime": 1560902409
                 },
                 AttributeUpdates={
                     "Hosts": {
-                        'Value': [],
-                        'Action': 'ADD'
+                        "Value": ["scanme.namp.org"],
+                        "Action": "ADD"
                     }
                 }
             )
+
+            print(f"AAAAAA {respa}")
 
             resp = await self.sqs_client.send_message(
                QueueUrl=self.sqs_input_queue_url,
@@ -49,7 +54,7 @@ async def test_integration():
                        "scan_id": "Scan5",
                        "port_id": "443",
                        "protocol": "tcp",
-                       "address": "123.123.123.123",
+                       "address": "92.242.132.24",
                        "address_type": "ip",
                        "service": "http",
                        "product": "apache",
