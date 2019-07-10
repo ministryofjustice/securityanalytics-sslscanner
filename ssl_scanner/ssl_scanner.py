@@ -18,12 +18,11 @@ class SslScanner(LambdaScanner):
             self._dynamodb_param
         ]
 
-    @staticmethod
-    def get_hosts(address, db_name):
+    def get_hosts(self, address, db_name):
         # get the hostname(s) that correspond with the input IP address
         # you can still manually pass through a hostname, which will return an
         # empty array
-        print("getting hosts")
+        print(f"Resolving hosts associated with IP")
         dynamodb = boto3.resource("dynamodb")
         table = dynamodb.Table(db_name)
         response = table.query(KeyConditionExpression=Key("Address").eq(address))
@@ -44,40 +43,40 @@ class SslScanner(LambdaScanner):
 
     async def scan(self, scan_request_id, scan_request):
         scan_request = loads(scan_request)
-        print(scan_request)
         msg = loads(scan_request["Message"])
-        print(msg)
         if msg["port_id"] == "443" or msg["service"] == "https":
             print(f"address {msg['address']}")
             host_names = self.get_hosts(msg["address"], self.get_ssm_param(self._dynamodb_param))
             print(host_names)
-            index = 0
             for host in host_names:
-                target = host+":"+msg["port_id"]
+                target = f"{host}:{msg['port_id']}"
                 msg["target"] = target
                 scan_start_time = iso_date_string_from_timestamp(datetime.now().timestamp())
                 print(f"open ssl scan: {target} for request id {scan_request_id}")
                 print("running openssl")
                 cmd = f"openssl s_client -showcerts -connect {target}"
-                mergedf = io.BytesIO()
-                print("running wild")
+                merged_file = io.BytesIO()
                 try:
                     # openssl outputs on two tty streams, so merge the two together and put in S3 for processing later
-                    out = subprocess.check_output(f"echo | {cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
-                    print(f"wwwww{out}")
+                    out = subprocess.check_output(f"{cmd} </dev/null 1>/tmp/tty1.txt 2>/tmp/tty2.txt", shell=True)
                 except subprocess.CalledProcessError as e:
                     # openssl will generate an error if there"s a problem in the chain
                     # that is used to source the error info and we do want to suppress this exception
                     pass
                 scan_end_time = iso_date_string_from_timestamp(datetime.now().timestamp())
                 with open("/tmp/tty2.txt", "r") as f:
-                    file2 = f.read().encode("UTF-8")
-                    print(f"file2{file2}")
-                    mergedf.write(file2)
+                    merged_file.write(f.read().encode("UTF-8"))
                 with open("/tmp/tty1.txt", "r") as f:
-                    file1 = f.read().encode("UTF-8")
-                    print(f"file1{file1}")
-                    mergedf.write(file1)
+                    merged_file.write(f.read().encode("UTF-8"))
 
-                mergedf.seek(0)
-                await self.write_results_set(f"{scan_request_id}-{host}", mergedf, ".txt", msg, scan_start_time, scan_end_time)
+                merged_file.seek(0)
+                await self.write_results_set(
+                    f"{scan_request_id}-{host}",
+                    merged_file,
+                    ".txt",
+                    msg,
+                    scan_start_time,
+                    scan_end_time
+                )
+        else:
+            print("Ignoring non 443 or https service")
