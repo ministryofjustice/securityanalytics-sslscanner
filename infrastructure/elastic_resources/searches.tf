@@ -1,8 +1,8 @@
 module "root_ca_search" {
-  // two slashes are intentional: https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories
+  # two slashes are intentional: https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories
   source = "github.com/ministryofjustice/securityanalytics-analyticsplatform//infrastructure/kibana_saved_object"
 
-  //  source = "../../../securityanalytics-analyticsplatform/infrastructure/kibana_saved_object"
+  #  source = "../../../securityanalytics-analyticsplatform/infrastructure/kibana_saved_object"
   app_name = var.app_name
 
   aws_region       = var.aws_region
@@ -19,10 +19,10 @@ module "root_ca_search" {
 }
 
 module "cert_chain_errors_search" {
-  // two slashes are intentional: https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories
+  # two slashes are intentional: https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories
   source = "github.com/ministryofjustice/securityanalytics-analyticsplatform//infrastructure/kibana_saved_object"
 
-  //  source = "../../../securityanalytics-analyticsplatform/infrastructure/kibana_saved_object"
+  #  source = "../../../securityanalytics-analyticsplatform/infrastructure/kibana_saved_object"
   app_name = var.app_name
 
   aws_region       = var.aws_region
