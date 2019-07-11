@@ -129,13 +129,13 @@ jobs:
             if [ $? != 0 ]; then
               export SUCCESS=1
             fi
-            cd infrastructure
-            terraform destroy --auto-approve -var ssm_source_stage=$SSM_SOURCE_STAGE -var account_id=$ACCOUNT_ID -var app_name=$APP_NAME -no-color
-            if [ $? != 0 ]; then
-              export SUCCESS=1
-            fi
-            terraform workspace select default
-            terraform workspace delete $DEPLOY_STAGE
+            #            cd infrastructure
+            #            terraform destroy --auto-approve -var ssm_source_stage=$SSM_SOURCE_STAGE -var account_id=$ACCOUNT_ID -var app_name=$APP_NAME -no-color
+            #            if [ $? != 0 ]; then
+            #              export SUCCESS=1
+            #            fi
+            #            terraform workspace select default
+            #            terraform workspace delete $DEPLOY_STAGE
             exit $SUCCESS
       - store_test_results:
           path: test-reports
