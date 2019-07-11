@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/ministryofjustice/securityanalytics-nmapscanner.svg?style=svg)](https://circleci.com/gh/ministryofjustice/securityanalytics-nmapscanner)
+[![CircleCI](https://circleci.com/gh/ministryofjustice/securityanalytics-sslscanner.svg?style=svg)](https://circleci.com/gh/ministryofjustice/securityanalytics-sslscanner)
 
 # Sample project
 

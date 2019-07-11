@@ -89,34 +89,15 @@ data "external" "ssl_zip" {
 module "port_detector" {
   source = "./port_detector"
 
-  account_id = var.account_id
+  account_id          = var.account_id
   aws_region          = var.aws_region
   app_name            = var.app_name
   use_xray            = var.use_xray
   transient_workspace = local.transient_workspace
   ssm_source_stage    = local.ssm_source_stage
 
-  ssl_zip       = local.ssl_zip
-}
-
-locals {
-  port_443_filter_policy = {
-     "port_id": ["443"],
-  }
-  # To avoid scanning port 443 twice exclude it from this second subscription
-  service_https_filter_policy = {
-     "service": ["https"],
-     "port_id":  [{"anything-but": "443"}]
-  }
-}
-
-# connect the ssl scanner to the port detector
-resource "aws_sns_topic_subscription" "subscribe_ssl_to_port_443" {
-  topic_arn            = module.port_detector.notifier
-  protocol             = "sqs"
-  endpoint             = module.ssl_task.task_queue
-  raw_message_delivery = false
-  filter_policy = jsonencode(local.port_443_filter_policy)
+  ssl_zip           = local.ssl_zip
+  results_topic_arn = module.ssl_task.results_notifier_arn
 }
 
 # connect the ssl scanner to the port detector
@@ -125,20 +106,36 @@ resource "aws_sns_topic_subscription" "subscribe_ssl_to_service_https" {
   protocol             = "sqs"
   endpoint             = module.ssl_task.task_queue
   raw_message_delivery = false
-  filter_policy = jsonencode(local.service_https_filter_policy)
+}
+
+data "aws_iam_policy_document" "resolved_addr_policy_doc" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "dynamodb:BatchGetItem",
+      "dynamodb:Describe*",
+      "dynamodb:List*",
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:Scan"
+    ]
+    # TODO reduce this scope
+    resources = ["*"]
+  }
 }
 
 module "ssl_task" {
-  source = "../../securityanalytics-taskexecution/infrastructure/lambda_task"
+  source = "github.com/ministryofjustice/securityanalytics-taskexecution//infrastructure/lambda_task"
+  # source = "../../securityanalytics-taskexecution/infrastructure/lambda_task"
 
-  account_id          = var.account_id
-  aws_region          = var.aws_region
-  app_name            = var.app_name
-  task_name           = var.task_name
-  use_xray            = var.use_xray
-  transient_workspace = local.transient_workspace
-  ssm_source_stage    = local.ssm_source_stage
-
+  account_id                = var.account_id
+  aws_region                = var.aws_region
+  app_name                  = var.app_name
+  task_name                 = var.task_name
+  use_xray                  = var.use_xray
+  transient_workspace       = local.transient_workspace
+  ssm_source_stage          = local.ssm_source_stage
+  scan_extension_policy_doc = data.aws_iam_policy_document.resolved_addr_policy_doc.json
   # TODO add separate settings for results and scan lambdas
   cpu    = "1024"
   memory = "2048"
@@ -147,6 +144,7 @@ module "ssl_task" {
 
   # Results
   lambda_zip           = local.ssl_zip
+  lambda_hash          = data.external.ssl_zip.result.hash
   results_parse_lambda = "results_parser.invoke"
 
   # General

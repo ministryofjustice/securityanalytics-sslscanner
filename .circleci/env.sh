@@ -3,7 +3,7 @@
 . ./.venv/bin/activate
 export AWS_REGION=eu-west-2
 export PYTHONPATH=`pwd`
-export PYTHONPATH=$PYTHONPATH:`pwd`/shared_code/python
+export PYTHONPATH=$PYTHONPATH:`pwd`/shared_code/python:`pwd`/task_execution
 export USERNAME=builder
 
 # Get short version of git hash for temporary deployment

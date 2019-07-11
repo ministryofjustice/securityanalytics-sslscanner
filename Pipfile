@@ -2,11 +2,14 @@
 pytest = "*"
 requests = "*"
 requests-aws4auth = "*"
+pytest-asyncio = "*"
 aws-xray-sdk = "*"
+aiohttp="*"
 
 [packages]
 netaddr="*"
 aioboto3 = "*"
+pytz="*"
 
 [requires]
 python_version = "3.7"
