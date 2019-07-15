@@ -12,7 +12,7 @@ module "moj_dash_ai_cert_chain_errors" {
 
   aws_region       = var.aws_region
   ssm_source_stage = var.ssm_source_stage
-  object_template  = "${path.module}/dashboards/ai_ssl_cert_chain_failures.json"
+  object_template  = "${path.module}/dashboards/ai_ssl_cert_chain_failures.dash.json"
 
   object_substitutions = {
     ai_cert_chain_errors_filter = module.ai_cert_chain_errors_filter.object_id
