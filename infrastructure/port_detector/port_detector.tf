@@ -3,11 +3,11 @@ resource "aws_lambda_permission" "with_sns" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.port_detector.function_name
   principal     = "sns.amazonaws.com"
-  source_arn    = var.results_topic_arn
+  source_arn    = data.aws_ssm_parameter.nmap_results_topic_arn.value
 }
 
 resource "aws_sns_topic_subscription" "subscribe_to_nmap_outputs" {
-  topic_arn = var.results_topic_arn
+  topic_arn = data.aws_ssm_parameter.nmap_results_topic_arn.value
   protocol  = "lambda"
   endpoint  = aws_lambda_function.port_detector.arn
 }
