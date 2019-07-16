@@ -96,8 +96,7 @@ module "port_detector" {
   transient_workspace = local.transient_workspace
   ssm_source_stage    = local.ssm_source_stage
 
-  ssl_zip           = local.ssl_zip
-  results_topic_arn = module.ssl_task.results_notifier_arn
+  ssl_zip = local.ssl_zip
 }
 
 # connect the ssl scanner to the port detector

@@ -16,5 +16,4 @@ data "aws_ssm_parameter" "dead_letter_bucket_arn" {
 
 data "aws_ssm_parameter" "nmap_results_topic_arn" {
   name = "/${var.app_name}/${var.ssm_source_stage}/tasks/nmap/results/arn"
-
 }

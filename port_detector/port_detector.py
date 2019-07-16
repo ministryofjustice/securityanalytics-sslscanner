@@ -10,11 +10,11 @@ class PortDetector(FilteringAndTransformingSnsToSnsGlue):
         super().__init__()
 
     async def handle_incoming_sns_event(self, sns_message):
-        msg = loads(sns_message["Message"])["__docs"]
-        if "ports" in msg.keys():
-            for port_data in msg["ports"]:
+        msg = loads(sns_message["Message"])
+        if "ports" in msg["__docs"].keys():
+            for port_data in msg["__docs"]["ports"]:
                 port_info = {
-                    "scan_id": port_data["Data"]["scan_id"],
+                    "scan_id": msg["scan_id"],
                     "port_id": port_data["Data"]["port_id"],
                     "protocol": port_data["Data"]["protocol"],
                     "address": port_data["Data"]["address"],
