@@ -64,6 +64,92 @@ locals {
   # When the circle ci build is run we override the var.ssm_source_stage to explicitly tell it
   # to use the resources in dev. Change
   ssm_source_stage = var.ssm_source_stage == "DEFAULT" ? terraform.workspace : var.ssm_source_stage
+
+  transient_workspace = false == contains(var.known_deployment_stages, terraform.workspace)
+}
+
+
+locals {
+  ssl_zip = "../.generated/sec-an-ssl.zip"
+}
+
+data "external" "ssl_zip" {
+  program = [
+    "python",
+    "../shared_code/python/package_lambda.py",
+    "-x",
+    local.ssl_zip,
+    "${path.module}/packaging.config.json",
+    "../Pipfile.lock",
+  ]
+}
+
+
+# TODO This module doesn't belong in the ssl scan, most of the secondary scans require it's input
+module "port_detector" {
+  source = "./port_detector"
+
+  account_id          = var.account_id
+  aws_region          = var.aws_region
+  app_name            = var.app_name
+  use_xray            = var.use_xray
+  transient_workspace = local.transient_workspace
+  ssm_source_stage    = local.ssm_source_stage
+
+  ssl_zip           = local.ssl_zip
+  results_topic_arn = module.ssl_task.results_notifier_arn
+}
+
+# connect the ssl scanner to the port detector
+resource "aws_sns_topic_subscription" "subscribe_ssl_to_service_https" {
+  topic_arn            = module.port_detector.notifier
+  protocol             = "sqs"
+  endpoint             = module.ssl_task.task_queue
+  raw_message_delivery = false
+}
+
+data "aws_iam_policy_document" "resolved_addr_policy_doc" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "dynamodb:BatchGetItem",
+      "dynamodb:Describe*",
+      "dynamodb:List*",
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:Scan"
+    ]
+    # TODO reduce this scope
+    resources = ["*"]
+  }
+}
+
+module "ssl_task" {
+  source = "github.com/ministryofjustice/securityanalytics-taskexecution//infrastructure/lambda_task"
+  # source = "../../securityanalytics-taskexecution/infrastructure/lambda_task"
+
+  account_id                = var.account_id
+  aws_region                = var.aws_region
+  app_name                  = var.app_name
+  task_name                 = var.task_name
+  use_xray                  = var.use_xray
+  transient_workspace       = local.transient_workspace
+  ssm_source_stage          = local.ssm_source_stage
+  scan_extension_policy_doc = data.aws_iam_policy_document.resolved_addr_policy_doc.json
+  # TODO add separate settings for results and scan lambdas
+  cpu    = "1024"
+  memory = "2048"
+
+  scan_lambda = "ssl_scanner.invoke"
+
+  # Results
+  lambda_zip           = local.ssl_zip
+  lambda_hash          = data.external.ssl_zip.result.hash
+  results_parse_lambda = "results_parser.invoke"
+
+  # General
+  subscribe_input_to_scan_initiator = false
+  subscribe_es_to_output            = true
 }
 
 module "elastic_resources" {
@@ -72,49 +158,5 @@ module "elastic_resources" {
   app_name         = var.app_name
   task_name        = var.task_name
   ssm_source_stage = local.ssm_source_stage
-}
-
-module "ssl_task" {
-  // two slashes are intentional: https://www.terraform.io/docs/modules/sources.html#modules-in-package-sub-directories  
-
-  source = "github.com/ministryofjustice/securityanalytics-taskexecution//infrastructure/task"
-
-  // It is sometimes useful for the developers of the project to use a local version of the task  // execution project. This enables them to develop the task execution project and the ssl scanner  // (or other future tasks), at the same time, without requiring the task execution changes to be  // pushed to master. Unfortunately you can not interpolate variables to generate source locations, so  // devs will have to comment in/out this line as and when they need
-
-  #source = "../../securityanalytics-taskexecution/infrastructure/task"
-
-  app_name                      = var.app_name
-  aws_region                    = var.aws_region
-  use_xray                      = var.use_xray
-  task_name                     = var.task_name
-  subscribe_elastic_to_notifier = true
-  account_id                    = var.account_id
-  ssm_source_stage              = local.ssm_source_stage
-  transient_workspace           = false == contains(var.known_deployment_stages, terraform.workspace)
-  results_parser_arn            = module.openssl.results_parser_arn
-}
-
-module "openssl" {
-  # TF-UPGRADE-TODO: In Terraform v0.11 and earlier, it was possible to
-  # reference a relative module source without a preceding ./, but it is no
-  # longer supported in Terraform v0.12.
-  #
-  # If the below module source is indeed a relative local path, add ./ to the
-  # start of the source string. If that is not the case, then leave it as-is
-  # and remove this TODO comment.
-  source                   = "./ssl_lambdas"
-  app_name                 = var.app_name
-  task_name                = var.task_name
-  results_bucket           = module.ssl_task.results_bucket_id
-  results_bucket_arn       = module.ssl_task.results_bucket_arn
-  aws_region               = var.aws_region
-  account_id               = var.account_id
-  queue_arn                = module.ssl_task.task_queue
-  ssm_source_stage         = local.ssm_source_stage
-  task_queue_consumer_arn  = module.ssl_task.task_queue_consumer_arn
-  task_queue_consumer_role = module.ssl_task.task_queue_consumer_role
-  results_parser_role      = module.ssl_task.results_parser
-  s3_bucket_policy_arn     = module.ssl_task.s3_bucket_policy_arn
-  s3_bucket_policy_doc     = module.ssl_task.s3_bucket_policy_doc
 }
 

@@ -1,0 +1,13 @@
+{
+    "attributes": {
+        "title": "${object_title}",
+        "visState": "{\"title\":\"${object_title}\",\"type\":\"table\",\"params\":{\"perPage\":10,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":false,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"verify_reason.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"hostname.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+        "uiStateJSON": "{}",
+        "description": "",
+        "version": 1,
+        "savedSearchId": "${search_id}",
+        "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"index\":\"${index}\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+        }
+    }
+}

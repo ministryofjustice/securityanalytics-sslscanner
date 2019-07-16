@@ -1,0 +1,11 @@
+{
+    "attributes": {
+        "title": "${object_title}",
+        "visState": "{\"title\":\"${object_title}\",\"type\":\"input_control_vis\",\"params\":{\"controls\":[{\"indexPattern\":\"${index}\",\"fieldName\":\"verify_reason.keyword\",\"parent\":\"\",\"label\":\"Verify failed reason\",\"type\":\"list\",\"options\":{\"type\":\"terms\",\"multiselect\":true,\"size\":1000,\"order\":\"desc\"}}],\"updateFiltersOnChange\":false,\"useTimeFilter\":false,\"pinFilters\":false},\"aggs\":[]}",
+        "uiStateJSON": "{}",
+        "description": "",
+        "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{}"
+        }
+    }
+}
